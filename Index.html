@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#F7F7F4">
+  <meta name="description" content="Estimate livestock water demand, peak conditions, trough and storage capacity, refill time, and source flow needs with RanchAssist™.">
+  <title>Water Requirement Calculator | RanchAssist™</title>
+  <style>
+    :root {
+      --ra-black:#0A0A09; --ra-white:#FFFFFF; --ra-canvas:#F7F7F4; --ra-surface:#FFFFFF; --ra-surface-soft:#F1F1ED;
+      --ra-text:#171715; --ra-text-2:#666660; --ra-text-3:#81817A; --ra-border:#DEDED8; --ra-border-strong:#C5C5BD;
+      --ra-green:#4C6752; --ra-green-soft:#E7EEE8; --ra-warning:#A16C32; --ra-warning-soft:#F4ECE1;
+      --ra-danger:#B44845; --ra-danger-soft:#F5E6E5; --ra-info:#536C80; --ra-info-soft:#EAF0F4;
+      --radius-sm:6px; --radius-md:8px; --radius-lg:12px; --radius-xl:16px;
+      --shadow:0 1px 2px rgba(10,10,9,.04),0 8px 24px rgba(10,10,9,.06);
+    }
+    *{box-sizing:border-box}
+    html{background:var(--ra-canvas);color:var(--ra-text);font-family:"Geist","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{margin:0;min-width:320px;background:var(--ra-canvas);font-size:15px;line-height:1.45}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.55}
+    :focus-visible{outline:2px solid var(--ra-black);outline-offset:2px}
+    .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+    .app{min-height:100vh}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(247,247,244,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--ra-border)}
+    .topbar-inner{max-width:1360px;margin:0 auto;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}
+    .wordmark{font-weight:760;letter-spacing:-.045em;font-size:18px;white-space:nowrap}.tm{font-size:9px;vertical-align:top;margin-left:2px}
+    .slash{color:var(--ra-border-strong)} .tool-short{color:var(--ra-text-2);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .header-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{min-height:42px;padding:0 14px;border-radius:7px;border:1px solid var(--ra-border-strong);background:var(--ra-white);font-weight:650;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none}
+    .btn:hover{background:var(--ra-surface-soft)} .btn.primary{background:var(--ra-black);color:var(--ra-white);border-color:var(--ra-black)} .btn.primary:hover{background:#242422}
+    .btn.danger{color:var(--ra-danger);border-color:#d9b6b4}.btn.tertiary{border-color:transparent;background:transparent;padding-left:8px;padding-right:8px}.btn.small{min-height:36px;padding:0 10px;font-size:12px}
+    .menu-wrap{position:relative}.menu{position:absolute;right:0;top:calc(100% + 7px);width:190px;background:var(--ra-white);border:1px solid var(--ra-border);border-radius:9px;box-shadow:var(--shadow);padding:6px;display:none;z-index:40}.menu.open{display:block}.menu button{width:100%;min-height:40px;border:0;background:transparent;border-radius:6px;text-align:left;padding:0 10px;font-weight:600;font-size:13px}.menu button:hover{background:var(--ra-surface-soft)}
+    .main{max-width:1360px;margin:0 auto;padding:36px 32px 64px}
+    .intro{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin-bottom:24px}
+    .eyebrow{font-size:11px;letter-spacing:.12em;font-weight:750;color:var(--ra-text-2);margin-bottom:7px}.intro h1{font-size:clamp(31px,4vw,43px);line-height:1.02;letter-spacing:-.045em;margin:0 0 10px;font-weight:650}.intro p{max-width:760px;margin:0;color:var(--ra-text-2);font-size:16px}
+    .project-meta{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}.project-meta .field{min-width:230px}.save-state{min-height:24px;font-size:12px;color:var(--ra-text-2);display:flex;align-items:center;gap:6px}.dot{width:7px;height:7px;border-radius:999px;background:var(--ra-warning)}.dot.saved{background:var(--ra-green)}
+    .session-note{background:var(--ra-info-soft);border:1px solid #ccd8df;border-radius:10px;padding:12px 14px;margin-bottom:22px;display:flex;gap:10px;align-items:flex-start;color:#334856}.session-note strong{color:#253943}.session-note p{margin:1px 0 0;font-size:13px}
+    .layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:20px;align-items:start}.layout>.stack,.layout>.results{min-width:0}.stack,.card,.table-wrap{min-width:0;max-width:100%}
+    .stack{display:grid;gap:16px}.card{background:var(--ra-white);border:1px solid var(--ra-border);border-radius:12px;padding:20px}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}.card-head h2,.card-head h3{margin:0;letter-spacing:-.02em}.card-head h2{font-size:20px}.card-head h3{font-size:17px}.subtle{color:var(--ra-text-2);font-size:13px}.step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--ra-black);color:#fff;font-size:12px;font-weight:750;margin-right:9px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.field{display:grid;gap:6px;min-width:0}.field label{font-size:13px;font-weight:650;color:#353532}.label-line{display:flex;align-items:center;justify-content:space-between;gap:8px}.tag{font-size:10px;letter-spacing:.08em;font-weight:750;color:var(--ra-warning);background:var(--ra-warning-soft);padding:3px 6px;border-radius:999px}.optional{font-size:11px;color:var(--ra-text-3);font-weight:550}
+    .control{position:relative}.control input,.control select,.field textarea{width:100%;height:44px;border:1px solid #CFCFC8;border-radius:7px;background:#fff;padding:0 12px;font-size:14px}.field textarea{height:96px;padding:10px 12px;resize:vertical}.control.has-unit input{padding-right:62px}.unit{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--ra-text-2);pointer-events:none}.helper{font-size:11.5px;color:var(--ra-text-2);line-height:1.35}
+    .toggle-line{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--ra-border);border-radius:8px;padding:11px 12px}.toggle-copy strong{display:block;font-size:13px}.toggle-copy span{display:block;color:var(--ra-text-2);font-size:11.5px;margin-top:2px}.switch{position:relative;width:42px;height:24px;flex:0 0 auto}.switch input{position:absolute;opacity:0;width:1px;height:1px}.switch-ui{position:absolute;inset:0;border-radius:999px;background:#c9c9c3;transition:.16s}.switch-ui:after{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.18);transition:.16s}.switch input:checked + .switch-ui{background:var(--ra-black)}.switch input:checked + .switch-ui:after{transform:translateX(18px)}
+    .table-wrap{overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;border:1px solid var(--ra-border);border-radius:9px}.data-table{width:100%;border-collapse:collapse;min-width:700px;font-size:12.5px}.data-table th{background:var(--ra-surface-soft);padding:9px 10px;text-align:left;font-size:11px;letter-spacing:.03em;color:#4d4d48}.data-table td{padding:9px 10px;border-top:1px solid var(--ra-border);vertical-align:middle}.data-table th.num,.data-table td.num{text-align:right;font-variant-numeric:tabular-nums}.data-table input,.data-table select{height:36px;width:100%;border:1px solid #cfcfc8;border-radius:6px;padding:0 8px;background:#fff;font-size:12.5px}.data-table .mini-btn{width:34px;height:34px;border:1px solid var(--ra-border);background:#fff;border-radius:6px;font-size:18px;line-height:1}.data-table .mini-btn:hover{background:var(--ra-surface-soft)}
+    .row-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}.validation{font-size:12px;color:var(--ra-danger);min-height:18px}.validation.ok{color:var(--ra-green)}
+    details.advanced{border:1px solid var(--ra-border);border-radius:9px;background:#fff}details.advanced>summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between}details.advanced>summary::-webkit-details-marker{display:none}details.advanced>summary:after{content:"+";font-size:18px;color:var(--ra-text-2)}details.advanced[open]>summary:after{content:"−"}.advanced-body{border-top:1px solid var(--ra-border);padding:14px}
+    .results{position:sticky;top:78px}.report-meta{display:none;font-size:11px;color:var(--ra-text-2);margin:0 0 10px}.hero-result{padding:20px;background:var(--ra-black);color:#fff;border-radius:12px;margin-bottom:14px}.hero-label{font-size:11px;letter-spacing:.11em;font-weight:750;color:#bcbcb5}.hero-value{font-size:clamp(38px,5vw,54px);letter-spacing:-.05em;line-height:1;margin:8px 0 5px;font-weight:650;font-variant-numeric:tabular-nums}.hero-context{font-size:13px;color:#d5d5cf}.status-pill{display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:12px;font-weight:700;padding:6px 9px;border-radius:999px;background:#2a2a27;color:#fff}.status-pill.good{background:#33463a}.status-pill.warn{background:#5d452b}.status-pill.bad{background:#6f3332}
+    .metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{border:1px solid var(--ra-border);border-radius:10px;padding:14px;background:#fff;min-width:0}.metric-label{font-size:10.5px;letter-spacing:.07em;font-weight:750;color:var(--ra-text-2)}.metric-value{font-size:27px;line-height:1.05;margin:7px 0 4px;font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.metric-context{font-size:11px;color:var(--ra-text-2)}
+    .viz{margin-top:14px;border:1px solid var(--ra-border);border-radius:10px;padding:15px;background:#fff}.viz-title{font-size:13px;font-weight:700;margin-bottom:11px}.bar-row{display:grid;grid-template-columns:92px minmax(0,1fr) 82px;gap:10px;align-items:center;margin:9px 0}.bar-label{font-size:11.5px;color:var(--ra-text-2)}.bar-track{height:10px;border-radius:999px;background:var(--ra-surface-soft);overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:#7b7b73;min-width:0;transition:width .18s}.bar-fill.peak{background:var(--ra-warning)}.bar-fill.supply{background:var(--ra-green)}.bar-num{text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums}.gauge-head{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--ra-text-2);margin-bottom:7px}.gauge{height:16px;border-radius:999px;background:var(--ra-surface-soft);overflow:hidden;position:relative}.gauge-fill{height:100%;background:var(--ra-green);transition:width .18s}.gauge-fill.warn{background:var(--ra-warning)}.gauge-fill.bad{background:var(--ra-danger)}.gauge-marker{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ra-black);left:100%}.gauge-note{font-size:11.5px;color:var(--ra-text-2);margin-top:8px}
+    .tank-diagram{display:grid;grid-template-columns:112px minmax(0,1fr);gap:16px;align-items:center}.tank{height:150px;border:2px solid #353532;border-radius:8px 8px 12px 12px;position:relative;overflow:hidden;background:#fff}.water-level{position:absolute;left:0;right:0;bottom:0;background:#dce8ee;border-top:1px solid #8da7b4;transition:height .18s}.tank-scale{position:absolute;inset:8px;display:flex;flex-direction:column;justify-content:space-between;font-size:9px;color:#666660;z-index:2}.tank-copy{font-size:12px;color:var(--ra-text-2)}.tank-copy strong{display:block;color:var(--ra-text);font-size:15px;margin-bottom:5px}.flow-line{height:2px;background:var(--ra-border-strong);position:relative;margin:12px 0}.flow-line:after{content:"→";position:absolute;right:-2px;top:50%;transform:translateY(-54%);background:#fff;padding-left:5px;color:#353532}
+    .alerts{display:grid;gap:8px;margin-top:14px}.alert{border:1px solid var(--ra-border);border-radius:8px;padding:10px 12px;font-size:12px;display:flex;gap:9px;align-items:flex-start}.alert.good{background:var(--ra-green-soft);border-color:#cdd9cf}.alert.warn{background:var(--ra-warning-soft);border-color:#dfcdb7}.alert.bad{background:var(--ra-danger-soft);border-color:#e0bfbd}.alert.info{background:var(--ra-info-soft);border-color:#cdd9e0}.alert-icon{font-weight:800}.alert p{margin:0}
+    .calc-details{margin-top:14px}.calc-details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ra-text);padding:4px 0}.formula-list{margin-top:12px;display:grid;gap:10px}.formula{background:var(--ra-surface-soft);border-radius:8px;padding:11px 12px}.formula strong{display:block;font-size:12px;margin-bottom:4px}.formula code{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#4d4d48;white-space:normal}
+    .footnote{margin-top:16px;padding-top:14px;border-top:1px solid var(--ra-border);font-size:11.5px;color:var(--ra-text-2)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(10,10,9,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:80}.modal-backdrop.open{display:flex}.modal{width:min(520px,100%);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--ra-border);border-radius:12px;box-shadow:var(--shadow);padding:20px}.modal h3{margin:0 0 6px;font-size:19px}.modal p{margin:0 0 16px;color:var(--ra-text-2);font-size:13px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}.toast{position:fixed;right:18px;bottom:18px;max-width:360px;background:var(--ra-black);color:#fff;border-radius:8px;padding:11px 13px;font-size:12.5px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);pointer-events:none;transition:.18s;z-index:100}.toast.show{opacity:1;transform:translateY(0)}
+    .mobile-results{display:none}
+    @media (max-width:1199px){
+      .topbar-inner,.main{padding-left:24px;padding-right:24px}
+      .layout{grid-template-columns:minmax(0,1fr)}
+      .results{position:static;max-width:100%}
+      .intro{grid-template-columns:minmax(0,1fr)}
+      .project-meta{align-items:flex-start}
+      .header-actions .desktop-label{display:none}
+      .table-wrap{max-width:100%}
+    }
+    @media (max-width:767px){
+      body{font-size:14px}
+      .topbar-inner{padding:10px 16px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:stretch}
+      .brand{min-height:32px}.tool-short,.slash{display:none}.wordmark{font-size:17px}
+      .header-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%}
+      .header-actions>.btn,.header-actions>.menu-wrap,.header-actions .menu-wrap>.btn{width:100%;min-width:0}
+      .header-actions .btn{min-height:44px;padding:0 8px}
+      .menu{max-width:min(190px,calc(100vw - 32px))}
+      .main{padding:22px 16px 96px}
+      .intro{gap:14px;margin-bottom:18px}.intro h1{font-size:30px}.intro p{font-size:14px}
+      .project-meta{display:grid;grid-template-columns:minmax(0,1fr);width:100%;gap:7px}.project-meta .field{min-width:0;width:100%}.save-state{min-height:20px}
+      .session-note{padding:11px 12px;margin-bottom:16px}.session-note p{font-size:12.5px}
+      .layout{gap:14px}.stack{gap:14px}.card{padding:16px}.card-head{margin-bottom:14px}.card-head h2{font-size:18px}.step{width:24px;height:24px;margin-right:7px}
+      .grid-2,.grid-3{grid-template-columns:minmax(0,1fr)}
+      .label-line{align-items:flex-start;flex-wrap:wrap}.tag{flex:0 0 auto}
+      .toggle-line{align-items:flex-start}.toggle-copy{min-width:0}
+      .table-wrap{border:0;overflow:visible;border-radius:0}
+      .data-table{display:block;width:100%;min-width:0;font-size:13px}
+      .data-table thead{display:none}
+      .data-table tbody{display:grid;gap:10px;width:100%}
+      .data-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;padding:12px;border:1px solid var(--ra-border);border-radius:9px;background:#fff}
+      .data-table td,.data-table td.num{display:grid;gap:5px;min-width:0;padding:0;border:0;text-align:left}
+      .data-table td:before{content:attr(data-label);font-size:10px;line-height:1.2;letter-spacing:.05em;font-weight:750;color:var(--ra-text-2);text-transform:uppercase}
+      .data-table td.mobile-full{grid-column:1/-1}
+      .data-table td.row-action{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center}
+      .data-table td.row-action:before{display:none}
+      .data-table input,.data-table select{height:44px;font-size:16px}
+      .data-table .mini-btn{width:44px;height:44px}
+      .row-actions{align-items:stretch}.row-actions>.btn{min-height:44px}.row-actions>.subtle,.row-actions>.validation{width:100%}
+      .hero-result{padding:18px}.hero-value{font-size:clamp(34px,11vw,48px);overflow-wrap:anywhere}
+      .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metric{padding:12px}.metric-value{font-size:23px}
+      .viz{padding:13px}.bar-row{grid-template-columns:68px minmax(0,1fr) 66px;gap:7px}.bar-num{font-size:11px}
+      .tank-diagram{grid-template-columns:88px minmax(0,1fr);gap:12px}.tank{height:132px}
+      .mobile-results{display:flex;position:fixed;z-index:30;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--ra-border);padding:10px 16px calc(10px + env(safe-area-inset-bottom));align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -8px 24px rgba(10,10,9,.07)}
+      .mobile-result-copy{min-width:0}.mobile-result-copy span{display:block;font-size:10px;letter-spacing:.06em;color:var(--ra-text-2);font-weight:700}.mobile-result-copy strong{font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}.mobile-results .btn{min-width:116px;min-height:46px}
+      .modal-backdrop{align-items:flex-end;padding:0}.modal{border-radius:14px 14px 0 0;width:100%;max-height:85vh;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+    }
+    @media (max-width:520px){
+      .metrics{grid-template-columns:minmax(0,1fr)}
+      .bar-row{grid-template-columns:1fr auto;gap:5px 10px}.bar-label{grid-column:1}.bar-num{grid-column:2;grid-row:1}.bar-track{grid-column:1/-1;grid-row:2}
+      .tank-diagram{grid-template-columns:76px minmax(0,1fr)}
+    }
+    @media (max-width:360px){
+      .topbar-inner,.main{padding-left:12px;padding-right:12px}
+      .header-actions{gap:4px}.header-actions .btn{padding:0 5px;font-size:12px}
+      .data-table tr{grid-template-columns:minmax(0,1fr)}.data-table td{grid-column:1!important}
+      .mobile-results{padding-left:12px;padding-right:12px}.mobile-results .btn{min-width:108px}
+    }
+    @media print{
+      .topbar,.header-actions,.session-note,.row-actions,.btn,.menu,.mobile-results,.project-meta,.modal-backdrop,.toast,.advanced summary{display:none!important}
+      .report-meta{display:block!important}
+      body,.app{background:#fff}.main{max-width:none;padding:0}.intro{margin:0 0 18px}.layout{grid-template-columns:1fr}.results{position:static}.card,.viz,.metric{break-inside:avoid;box-shadow:none}.advanced-body{display:block!important;border-top:0;padding:0}details.advanced{border:0}details.advanced:not([open])>.advanced-body{display:block}.footnote{font-size:10px}
+    }
+    @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+  </style>
+</head>
+<body>
+<div class="app" id="appRoot">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" aria-label="RanchAssist Water Requirement Calculator">
+        <div class="wordmark">RANCHASSIST<span class="tm">™</span></div><span class="slash">/</span><span class="tool-short">Water Requirement Calculator</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn" type="button" id="openProjectBtn"><span aria-hidden="true">↥</span><span class="desktop-label">Open Project</span></button>
+        <button class="btn" type="button" id="saveProjectBtn"><span aria-hidden="true">↓</span><span class="desktop-label">Save Project</span></button>
+        <div class="menu-wrap">
+          <button class="btn" type="button" id="exportMenuBtn" aria-haspopup="true" aria-expanded="false">Export <span aria-hidden="true">⌄</span></button>
+          <div class="menu" id="exportMenu" role="menu">
+            <button type="button" data-action="pdf">Export PDF</button>
+            <button type="button" data-action="csv">Export CSV</button>
+            <button type="button" data-action="print">Print</button>
+          </div>
+        </div>
+        <div class="menu-wrap">
+          <button class="btn primary" type="button" id="shareMenuBtn" aria-haspopup="true" aria-expanded="false">Share <span aria-hidden="true">⌄</span></button>
+          <div class="menu" id="shareMenu" role="menu">
+            <button type="button" data-action="email">Email Summary</button>
+            <button type="button" data-action="copy">Copy Summary</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="intro">
+      <div>
+        <div class="eyebrow">WATER · LIVESTOCK</div>
+        <h1>Water Requirement Calculator</h1>
+        <p>Estimate livestock demand, peak hot-weather needs, trough and storage adequacy, refill time, and the source flow required to recover your system.</p>
+      </div>
+      <div class="project-meta">
+        <div class="field">
+          <label for="projectName">Project name <span class="optional">Optional</span></label>
+          <div class="control"><input id="projectName" maxlength="120" value="Water Requirement Project" autocomplete="off"></div>
+        </div>
+        <div class="save-state" id="saveState"><span class="dot" id="saveDot"></span><span id="saveStateText">Unsaved</span></div>
+      </div>
+    </section>
+
+    <div class="session-note" role="note">
+      <span aria-hidden="true">ⓘ</span>
+      <p><strong>Session only.</strong> RanchAssist does not permanently store this project. Save a RanchAssist <code>.ra</code> project file to continue your work later, or export your results before leaving.</p>
+    </div>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="card" aria-labelledby="herdTitle">
+          <div class="card-head">
+            <div><h2 id="herdTitle"><span class="step">1</span>Livestock groups</h2><div class="subtle">Add each group using your own gallons/head/day planning assumption.</div></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" aria-label="Livestock groups">
+              <thead><tr><th>Group</th><th>Livestock class</th><th class="num">Head</th><th class="num">Gal/head/day</th><th class="num">Normal gal/day</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+              <tbody id="livestockBody"></tbody>
+            </table>
+          </div>
+          <div class="row-actions">
+            <button class="btn small" id="addLivestockBtn" type="button">+ Add livestock group</button>
+            <div class="subtle" id="herdSummary">0 head</div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="conditionsTitle">
+          <div class="card-head">
+            <div><h2 id="conditionsTitle"><span class="step">2</span>Conditions</h2><div class="subtle">Model a normal day and a user-defined hot-weather planning case.</div></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><div class="label-line"><label for="typicalTemp">Typical temperature</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="typicalTemp" type="number" inputmode="decimal" min="-50" max="140" step="1" value="70"><span class="unit">°F</span></div></div>
+            <div class="field"><div class="label-line"><label for="hotTemp">Hot-weather planning temperature</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="hotTemp" type="number" inputmode="decimal" min="-50" max="150" step="1" value="95"><span class="unit">°F</span></div></div>
+            <div class="field"><label for="forageCondition">Forage condition</label><div class="control"><select id="forageCondition"><option value="lush">Lush / high-moisture forage</option><option value="dry" selected>Dry forage / hay</option></select></div></div>
+            <div class="field"><div class="label-line"><label for="saltFeedAdj">Salt / feed adjustment</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="saltFeedAdj" type="number" inputmode="decimal" min="-50" max="200" step="1" value="0"><span class="unit">%</span></div><div class="helper">User-defined demand change for ration, salt, mineral, or feeding conditions.</div></div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="toggle-line">
+            <div class="toggle-copy"><strong>Apply lactation-season adjustment</strong><span>Applies only to groups classified as Lactating cow / cow-calf pair.</span></div>
+            <label class="switch" aria-label="Apply lactation-season adjustment"><input id="lactationToggle" type="checkbox" checked><span class="switch-ui"></span></label>
+          </div>
+          <div style="height:12px"></div>
+          <div class="grid-2">
+            <div class="field"><div class="label-line"><label for="safetyFactor">Planning safety factor</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="safetyFactor" type="number" inputmode="decimal" min="0" max="200" step="1" value="15"><span class="unit">%</span></div></div>
+            <div class="field"><label for="reserveMode">Emergency reserve</label><div class="grid-2" style="grid-template-columns:1fr 1fr"><div class="control"><input id="reserveValue" type="number" inputmode="decimal" min="0" max="365" step="1" value="24" aria-label="Emergency reserve amount"></div><div class="control"><select id="reserveMode" aria-label="Emergency reserve unit"><option value="hours" selected>hours</option><option value="days">days</option></select></div></div></div>
+          </div>
+          <div style="height:12px"></div>
+          <details class="advanced" id="conditionAdvanced">
+            <summary>Advanced condition assumptions</summary>
+            <div class="advanced-body">
+              <div class="grid-3">
+                <div class="field"><div class="label-line"><label for="heatRate">Heat adjustment rate</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="heatRate" type="number" inputmode="decimal" min="0" max="10" step="0.1" value="1"><span class="unit">% / °F</span></div><div class="helper">Applied only to degrees above the typical planning temperature.</div></div>
+                <div class="field"><div class="label-line"><label for="dryForageAdj">Dry forage adjustment</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="dryForageAdj" type="number" inputmode="decimal" min="-50" max="200" step="1" value="10"><span class="unit">%</span></div></div>
+                <div class="field"><div class="label-line"><label for="lactationAdj">Lactation adjustment</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="lactationAdj" type="number" inputmode="decimal" min="0" max="200" step="1" value="10"><span class="unit">%</span></div></div>
+                <div class="field"><div class="label-line"><label for="drinkingWindow">Peak drinking window</label><span class="tag">ASSUMPTION</span></div><div class="control has-unit"><input id="drinkingWindow" type="number" inputmode="decimal" min="1" max="24" step="0.5" value="8"><span class="unit">hr/day</span></div><div class="helper">Used to convert peak daily demand into a planning hourly draw rate.</div></div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="card" aria-labelledby="systemTitle">
+          <div class="card-head">
+            <div><h2 id="systemTitle"><span class="step">3</span>Water system</h2><div class="subtle">Enter current trough, storage, source, and desired recovery capacity.</div></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label for="troughCount">Number of troughs</label><div class="control"><input id="troughCount" type="number" inputmode="numeric" min="0" max="1000" step="1" value="2"></div></div>
+            <div class="field"><label for="troughCapacity">Capacity per trough</label><div class="control has-unit"><input id="troughCapacity" type="number" inputmode="decimal" min="0" max="10000000" step="1" value="500"><span class="unit">gal</span></div></div>
+            <div class="field"><label for="storageTank">Storage tank capacity</label><div class="control has-unit"><input id="storageTank" type="number" inputmode="decimal" min="0" max="100000000" step="1" value="2500"><span class="unit">gal</span></div></div>
+            <div class="field"><label for="sourceGpm">Available source flow</label><div class="control has-unit"><input id="sourceGpm" type="number" inputmode="decimal" min="0" max="100000" step="0.1" value="5"><span class="unit">GPM</span></div></div>
+            <div class="field"><label for="recoveryHours">Desired refill / recovery period</label><div class="control has-unit"><input id="recoveryHours" type="number" inputmode="decimal" min="0.25" max="168" step="0.25" value="8"><span class="unit">hours</span></div><div class="helper">Used to estimate minimum source flow needed to replace one peak-day demand volume within this period.</div></div>
+          </div>
+          <div style="height:14px"></div>
+          <div class="field"><label for="notes">Project notes <span class="optional">Optional</span></label><textarea id="notes" maxlength="3000" placeholder="Well reliability, water quality, backup source, float valve notes, pump constraints, or field observations."></textarea></div>
+        </section>
+
+        <section class="card" aria-labelledby="pointsTitle">
+          <div class="card-head">
+            <div><h2 id="pointsTitle"><span class="step">4</span>Water points <span class="optional">Advanced</span></h2><div class="subtle">Optionally allocate the herd across multiple trough/source locations and compare each point to its assigned demand.</div></div>
+            <label class="switch" aria-label="Enable water point allocation"><input id="waterPointsToggle" type="checkbox"><span class="switch-ui"></span></label>
+          </div>
+          <div id="waterPointsPanel" hidden>
+            <div class="table-wrap">
+              <table class="data-table" aria-label="Water points">
+                <thead><tr><th>Water point</th><th class="num">Herd allocation</th><th class="num">Trough capacity</th><th class="num">Source flow</th><th class="num">Peak demand</th><th class="num">Required flow</th><th></th></tr></thead>
+                <tbody id="waterPointsBody"></tbody>
+              </table>
+            </div>
+            <div class="row-actions"><button class="btn small" id="addWaterPointBtn" type="button">+ Add water point</button><div class="validation" id="allocationValidation"></div></div>
+          </div>
+          <div id="waterPointsEmpty" class="subtle">Turn on water point allocation to analyze separate troughs or sources.</div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><div><h2><span class="step">5</span>Project actions</h2><div class="subtle">Save editable work separately from report exports.</div></div></div>
+          <div class="row-actions" style="margin-top:0;justify-content:flex-start">
+            <button class="btn" type="button" id="duplicateProjectBtn">Duplicate Project</button>
+            <button class="btn danger" type="button" id="clearSessionBtn">Clear Session</button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="results" id="resultsPanel" aria-live="polite">
+        <div class="report-meta" id="reportMeta"></div>
+        <div class="hero-result">
+          <div class="hero-label">PEAK HOT-WEATHER DEMAND</div>
+          <div class="hero-value" id="peakDailyValue">0 gal/day</div>
+          <div class="hero-context" id="peakContext">Add livestock groups to begin.</div>
+          <div class="status-pill" id="capacityStatus">Waiting for inputs</div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">NORMAL DAILY DEMAND</div><div class="metric-value" id="normalDailyMetric">0 gal</div><div class="metric-context">Adjusted normal planning case</div></div>
+          <div class="metric"><div class="metric-label">HOURLY PEAK PLAN</div><div class="metric-value" id="hourlyPeakMetric">0 gal/hr</div><div class="metric-context" id="hourlyPeakContext">Across peak drinking window</div></div>
+          <div class="metric"><div class="metric-label">REQUIRED RESERVE</div><div class="metric-value" id="reserveMetric">0 gal</div><div class="metric-context" id="reserveContext">Emergency reserve target</div></div>
+          <div class="metric"><div class="metric-label">ON-SITE CAPACITY</div><div class="metric-value" id="capacityMetric">0 gal</div><div class="metric-context" id="capacityContext">Troughs + storage tank</div></div>
+          <div class="metric"><div class="metric-label">MIN SOURCE FLOW</div><div class="metric-value" id="minGpmMetric">0 GPM</div><div class="metric-context" id="minGpmContext">To replace peak-day demand</div></div>
+          <div class="metric"><div class="metric-label">FULL REFILL TIME</div><div class="metric-value" id="refillMetric">—</div><div class="metric-context">On-site capacity from empty</div></div>
+          <div class="metric"><div class="metric-label">GALLONS / HEAD AVAILABLE</div><div class="metric-value" id="perHeadMetric">0 gal</div><div class="metric-context">Stored water divided by head count</div></div>
+          <div class="metric"><div class="metric-label">CAPACITY MARGIN</div><div class="metric-value" id="marginMetric">0 gal</div><div class="metric-context" id="marginContext">Versus reserve target</div></div>
+        </div>
+
+        <div class="viz">
+          <div class="viz-title">Normal vs. hot-weather demand</div>
+          <div class="bar-row"><div class="bar-label">Normal</div><div class="bar-track"><div class="bar-fill" id="normalBar"></div></div><div class="bar-num" id="normalBarValue">0 gal</div></div>
+          <div class="bar-row"><div class="bar-label">Peak / hot</div><div class="bar-track"><div class="bar-fill peak" id="peakBar"></div></div><div class="bar-num" id="peakBarValue">0 gal</div></div>
+        </div>
+
+        <div class="viz">
+          <div class="viz-title">Supply vs. reserve requirement</div>
+          <div class="gauge-head"><span>On-site capacity</span><span id="gaugeNumbers">0 / 0 gal</span></div>
+          <div class="gauge" aria-label="Stored water capacity compared with reserve requirement"><div class="gauge-fill" id="capacityGauge"></div></div>
+          <div class="gauge-note" id="gaugeNote">Reserve requirement will appear after demand is calculated.</div>
+        </div>
+
+        <div class="viz">
+          <div class="viz-title">Tank drawdown / recovery</div>
+          <div class="tank-diagram">
+            <div class="tank" aria-hidden="true"><div class="water-level" id="waterLevel"></div><div class="tank-scale"><span>FULL</span><span>50%</span><span>EMPTY</span></div></div>
+            <div class="tank-copy"><strong id="tankHeadline">0 gal on site</strong><span id="tankDetail">Enter system capacity and source flow.</span><div class="flow-line"></div><span id="flowDetail">Source recovery: —</span></div>
+          </div>
+        </div>
+
+        <div class="alerts" id="alerts"></div>
+
+        <details class="calc-details">
+          <summary>View Calculation Details</summary>
+          <div class="formula-list" id="formulaList"></div>
+        </details>
+
+        <div class="footnote">Planning aid only. This calculator does not certify animal-welfare, plumbing, pump, well, storage, or engineering compliance. Actual needs vary with livestock, weather, water quality, travel distance, shade, feed, health, source reliability, equipment, and site conditions.</div>
+      </aside>
+    </div>
+  </main>
+
+  <div class="mobile-results"><div class="mobile-result-copy"><span>PEAK DEMAND</span><strong id="mobilePeak">0 gal/day</strong></div><button class="btn primary" type="button" id="mobileViewResults">View results</button></div>
+
+  <input id="projectFileInput" type="file" accept=".ra,application/json,application/x-ranchassist-project" hidden>
+
+  <div class="modal-backdrop" id="emailModal" role="dialog" aria-modal="true" aria-labelledby="emailModalTitle">
+    <div class="modal"><h3 id="emailModalTitle">Email summary</h3><p>Send the current water planning summary. RanchAssist does not save the project to send this email.</p><div class="field"><label for="emailRecipient">Recipient email</label><div class="control"><input id="emailRecipient" type="email" autocomplete="email" placeholder="name@example.com"></div></div><div class="validation" id="emailValidation"></div><div class="modal-actions"><button class="btn" type="button" data-close-modal="emailModal">Cancel</button><button class="btn primary" id="sendEmailBtn" type="button">Send Email</button></div></div>
+  </div>
+
+  <div class="modal-backdrop" id="clearModal" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
+    <div class="modal"><h3 id="clearModalTitle">Clear this session?</h3><p>This removes the current unsaved RanchAssist project from this browser session. Saved <code>.ra</code> files on your device will not be affected.</p><div class="modal-actions"><button class="btn" type="button" data-close-modal="clearModal">Cancel</button><button class="btn danger" id="confirmClearBtn" type="button">Clear Session</button></div></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const TOOL = { id:'water-requirement-calculator', name:'Water Requirement Calculator', version:'1.0.1', formatVersion:'1.0' };
+  const SESSION_KEY = 'ranchassist.waterRequirementCalculator.active.v1';
+  const MAX_GROUPS = 50;
+  const MAX_POINTS = 30;
+
+  const CLASS_DEFAULTS = {
+    mature_cow:{label:'Mature cow',gpd:15},
+    lactating:{label:'Lactating cow / cow-calf pair',gpd:20},
+    calf:{label:'Calf',gpd:8},
+    stocker:{label:'Stocker',gpd:12},
+    bull:{label:'Bull',gpd:18},
+    horse:{label:'Horse',gpd:12},
+    sheep_goat:{label:'Sheep / goat',gpd:2},
+    custom:{label:'Custom',gpd:10}
+  };
+
+  const $ = id => document.getElementById(id);
+  const els = {
+    root:$('appRoot'), livestockBody:$('livestockBody'), waterPointsBody:$('waterPointsBody'), projectName:$('projectName'),
+    typicalTemp:$('typicalTemp'), hotTemp:$('hotTemp'), forageCondition:$('forageCondition'), saltFeedAdj:$('saltFeedAdj'),
+    lactationToggle:$('lactationToggle'), safetyFactor:$('safetyFactor'), reserveValue:$('reserveValue'), reserveMode:$('reserveMode'),
+    heatRate:$('heatRate'), dryForageAdj:$('dryForageAdj'), lactationAdj:$('lactationAdj'), drinkingWindow:$('drinkingWindow'),
+    troughCount:$('troughCount'), troughCapacity:$('troughCapacity'), storageTank:$('storageTank'), sourceGpm:$('sourceGpm'), recoveryHours:$('recoveryHours'), notes:$('notes'),
+    waterPointsToggle:$('waterPointsToggle'), waterPointsPanel:$('waterPointsPanel'), waterPointsEmpty:$('waterPointsEmpty'), allocationValidation:$('allocationValidation')
+  };
+
+  let state = createInitialState();
+  let lastSavedStateHash = '';
+  let calculations = null;
+  let toastTimer = null;
+  let restoring = false;
+  let blankEditableHash = '';
+
+  function uuid(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16);});
+  }
+  function nowIso(){return new Date().toISOString();}
+  function clamp(v,min,max,fallback=0){v=Number(v);return Number.isFinite(v)?Math.min(max,Math.max(min,v)):fallback;}
+  function num(v,fallback=0){v=Number(v);return Number.isFinite(v)?v:fallback;}
+  function round(v,d=1){const p=Math.pow(10,d);return Math.round((num(v)+Number.EPSILON)*p)/p;}
+  function fmt(v,d=0){return num(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});}
+  function fmtSmart(v){v=Math.abs(num(v));return v>=100?fmt(v,0):v>=10?fmt(v,1):fmt(v,2);}
+  function safeText(v,max=120){return String(v==null?'':v).replace(/[\u0000-\u001F\u007F]/g,' ').trim().slice(0,max);}
+  function safeMultiline(v,max=3000){return String(v==null?'':v).replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,' ').trim().slice(0,max);}
+  function esc(v){return safeText(v,500).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function escapeCsv(v){const s=String(v==null?'':v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+  function asPercentFactor(pct){return 1 + num(pct)/100;}
+  function reserveHours(value,mode){return mode==='days'?clamp(value,0,365,0)*24:clamp(value,0,8760,0);}
+  function durationText(hours){
+    if (!Number.isFinite(hours) || hours < 0) return '—';
+    if (hours < 1) return fmt(hours*60,0)+' min';
+    if (hours < 48) return fmt(hours,1)+' hr';
+    return fmt(hours/24,1)+' days';
+  }
+  function hashObject(obj){
+    const s=JSON.stringify(obj); let h=5381;
+    for(let i=0;i<s.length;i++) h=((h<<5)+h)^s.charCodeAt(i);
+    return (h>>>0).toString(16);
+  }
+  function slug(name){
+    return safeText(name,90).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'') || 'Water_Requirement_Project';
+  }
+
+  function createInitialState(){
+    const t=nowIso();
+    return {
+      project:{id:uuid(),name:'Water Requirement Project',createdAt:t,updatedAt:t},
+      livestockGroups:[
+        {name:'Main herd',livestockClass:'mature_cow',head:50,gpdPerHead:15}
+      ],
+      conditions:{typicalTemp:70,hotTemp:95,forageCondition:'dry',saltFeedAdj:0,lactationToggle:true,safetyFactor:15,reserveValue:24,reserveMode:'hours'},
+      waterSystem:{troughCount:2,troughCapacity:500,storageTank:2500,sourceGpm:5,recoveryHours:8},
+      waterPointsEnabled:false,
+      waterPoints:[{name:'North trough',allocation:50,troughCapacity:500,sourceGpm:2.5},{name:'South trough',allocation:50,troughCapacity:500,sourceGpm:2.5}],
+      reserveSettings:{},
+      assumptions:{heatRate:1,dryForageAdj:10,lactationAdj:10,drinkingWindow:8},
+      notes:''
+    };
+  }
+
+  function renderLivestockRows(){
+    els.livestockBody.innerHTML='';
+    state.livestockGroups.forEach((g,index)=>{
+      const tr=document.createElement('tr');
+      const options=Object.entries(CLASS_DEFAULTS).map(([k,v])=>`<option value="${k}" ${g.livestockClass===k?'selected':''}>${esc(v.label)}</option>`).join('');
+      tr.innerHTML=`
+        <td class="mobile-full" data-label="Group"><input data-group-field="name" data-index="${index}" maxlength="80" value="${esc(g.name)}" aria-label="Livestock group name"></td>
+        <td class="mobile-full" data-label="Livestock class"><select data-group-field="livestockClass" data-index="${index}" aria-label="Livestock class">${options}</select></td>
+        <td class="num" data-label="Head"><input data-group-field="head" data-index="${index}" type="number" min="0" max="1000000" step="1" inputmode="numeric" value="${clamp(g.head,0,1000000,0)}" aria-label="Head count"></td>
+        <td class="num" data-label="Gal/head/day"><input data-group-field="gpdPerHead" data-index="${index}" type="number" min="0" max="10000" step="0.1" inputmode="decimal" value="${clamp(g.gpdPerHead,0,10000,0)}" aria-label="Gallons per head per day"></td>
+        <td class="num" data-label="Normal gal/day" data-group-normal="${index}">0</td>
+        <td class="num row-action" data-label="Actions"><button type="button" class="mini-btn" data-remove-group="${index}" aria-label="Remove livestock group">×</button></td>`;
+      els.livestockBody.appendChild(tr);
+    });
+  }
+
+  function renderWaterPointRows(){
+    els.waterPointsBody.innerHTML='';
+    state.waterPoints.forEach((p,index)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td class="mobile-full" data-label="Water point"><input data-point-field="name" data-index="${index}" maxlength="80" value="${esc(p.name)}" aria-label="Water point name"></td>
+        <td class="num" data-label="Herd allocation %"><input data-point-field="allocation" data-index="${index}" type="number" min="0" max="100" step="0.1" inputmode="decimal" value="${clamp(p.allocation,0,100,0)}" aria-label="Herd allocation percent"></td>
+        <td class="num" data-label="Trough capacity"><input data-point-field="troughCapacity" data-index="${index}" type="number" min="0" max="10000000" step="1" inputmode="decimal" value="${clamp(p.troughCapacity,0,10000000,0)}" aria-label="Water point trough capacity gallons"></td>
+        <td class="num" data-label="Source flow GPM"><input data-point-field="sourceGpm" data-index="${index}" type="number" min="0" max="100000" step="0.1" inputmode="decimal" value="${clamp(p.sourceGpm,0,100000,0)}" aria-label="Water point source flow GPM"></td>
+        <td class="num" data-label="Peak demand" data-point-peak="${index}">0</td>
+        <td class="num" data-label="Required flow" data-point-required="${index}">0</td>
+        <td class="num row-action" data-label="Actions"><button type="button" class="mini-btn" data-remove-point="${index}" aria-label="Remove water point">×</button></td>`;
+      els.waterPointsBody.appendChild(tr);
+    });
+  }
+
+  function renderAll(){
+    restoring=true;
+    els.projectName.value=state.project.name || 'Water Requirement Project';
+    renderLivestockRows();
+    els.typicalTemp.value=state.conditions.typicalTemp;
+    els.hotTemp.value=state.conditions.hotTemp;
+    els.forageCondition.value=state.conditions.forageCondition;
+    els.saltFeedAdj.value=state.conditions.saltFeedAdj;
+    els.lactationToggle.checked=!!state.conditions.lactationToggle;
+    els.safetyFactor.value=state.conditions.safetyFactor;
+    els.reserveValue.value=state.conditions.reserveValue;
+    els.reserveMode.value=state.conditions.reserveMode;
+    els.heatRate.value=state.assumptions.heatRate;
+    els.dryForageAdj.value=state.assumptions.dryForageAdj;
+    els.lactationAdj.value=state.assumptions.lactationAdj;
+    els.drinkingWindow.value=state.assumptions.drinkingWindow;
+    els.troughCount.value=state.waterSystem.troughCount;
+    els.troughCapacity.value=state.waterSystem.troughCapacity;
+    els.storageTank.value=state.waterSystem.storageTank;
+    els.sourceGpm.value=state.waterSystem.sourceGpm;
+    els.recoveryHours.value=state.waterSystem.recoveryHours;
+    els.notes.value=state.notes || '';
+    els.waterPointsToggle.checked=!!state.waterPointsEnabled;
+    renderWaterPointRows();
+    updateWaterPointsVisibility();
+    restoring=false;
+    calculateAndRender(false);
+  }
+
+  function syncInputsToState(){
+    state.project.name=safeText(els.projectName.value,120)||'Water Requirement Project';
+    state.conditions={
+      typicalTemp:clamp(els.typicalTemp.value,-50,140,70),
+      hotTemp:clamp(els.hotTemp.value,-50,150,95),
+      forageCondition:els.forageCondition.value==='lush'?'lush':'dry',
+      saltFeedAdj:clamp(els.saltFeedAdj.value,-50,200,0),
+      lactationToggle:!!els.lactationToggle.checked,
+      safetyFactor:clamp(els.safetyFactor.value,0,200,15),
+      reserveValue:clamp(els.reserveValue.value,0,365,24),
+      reserveMode:els.reserveMode.value==='days'?'days':'hours'
+    };
+    state.assumptions={
+      heatRate:clamp(els.heatRate.value,0,10,1),
+      dryForageAdj:clamp(els.dryForageAdj.value,-50,200,10),
+      lactationAdj:clamp(els.lactationAdj.value,0,200,10),
+      drinkingWindow:clamp(els.drinkingWindow.value,1,24,8)
+    };
+    state.waterSystem={
+      troughCount:Math.round(clamp(els.troughCount.value,0,1000,0)),
+      troughCapacity:clamp(els.troughCapacity.value,0,10000000,0),
+      storageTank:clamp(els.storageTank.value,0,100000000,0),
+      sourceGpm:clamp(els.sourceGpm.value,0,100000,0),
+      recoveryHours:clamp(els.recoveryHours.value,.25,168,8)
+    };
+    state.waterPointsEnabled=!!els.waterPointsToggle.checked;
+    state.notes=safeMultiline(els.notes.value,3000);
+  }
+
+  function compute(){
+    const c=state.conditions,a=state.assumptions,w=state.waterSystem;
+    const tempDelta=Math.max(0,c.hotTemp-c.typicalTemp);
+    const heatFactor=1+(tempDelta*a.heatRate/100);
+    const forageFactor=c.forageCondition==='dry'?asPercentFactor(a.dryForageAdj):1;
+    const feedFactor=Math.max(0,asPercentFactor(c.saltFeedAdj));
+    const safetyFactor=asPercentFactor(c.safetyFactor);
+
+    let totalHead=0,baseDaily=0,normalDaily=0;
+    const groupResults=state.livestockGroups.map(g=>{
+      const head=clamp(g.head,0,1000000,0),gpd=clamp(g.gpdPerHead,0,10000,0);
+      const base=head*gpd;
+      const lactFactor=(c.lactationToggle && g.livestockClass==='lactating')?asPercentFactor(a.lactationAdj):1;
+      const normal=base*forageFactor*feedFactor*lactFactor;
+      const peak=normal*heatFactor*safetyFactor;
+      totalHead+=head;baseDaily+=base;normalDaily+=normal;
+      return {...g,head,gpdPerHead:gpd,baseDemand:base,normalDemand:normal,peakDemand:peak,lactationFactor:lactFactor};
+    });
+    const peakDaily=groupResults.reduce((s,g)=>s+g.peakDemand,0);
+    const hourlyPeak=peakDaily/a.drinkingWindow;
+    const reserveH=reserveHours(c.reserveValue,c.reserveMode);
+    const reserveStorage=peakDaily*(reserveH/24);
+    const troughTotal=w.troughCount*w.troughCapacity;
+    const totalCapacity=troughTotal+w.storageTank;
+    const gallonsPerHead=totalHead>0?totalCapacity/totalHead:0;
+    const capacityMargin=totalCapacity-reserveStorage;
+    const refillHours=w.sourceGpm>0?totalCapacity/(w.sourceGpm*60):Infinity;
+    const troughRefillHours=w.sourceGpm>0?troughTotal/(w.sourceGpm*60):Infinity;
+    const minSourceGpm=w.recoveryHours>0?peakDaily/(w.recoveryHours*60):0;
+    const emptyStorageRecoveryGpm=w.recoveryHours>0?totalCapacity/(w.recoveryHours*60):0;
+    const sourceDailyCapacity=w.sourceGpm*60*24;
+    const sourceMarginGpm=w.sourceGpm-minSourceGpm;
+    const hourlySourceGallons=w.sourceGpm*60;
+    const troughHoursCoverage=hourlyPeak>0?troughTotal/hourlyPeak:0;
+
+    const pointResults=state.waterPoints.map(p=>{
+      const allocation=clamp(p.allocation,0,100,0);
+      const ratio=allocation/100;
+      const allocatedHead=totalHead*ratio;
+      const pointPeak=peakDaily*ratio;
+      const requiredGpm=w.recoveryHours>0?pointPeak/(w.recoveryHours*60):0;
+      const sourceGpm=clamp(p.sourceGpm,0,100000,0);
+      const troughCapacity=clamp(p.troughCapacity,0,10000000,0);
+      const refill=sourceGpm>0?troughCapacity/(sourceGpm*60):Infinity;
+      return {...p,allocation,allocatedHead,peakDemand:pointPeak,requiredGpm,sourceGpm,troughCapacity,gallonsPerHead:allocatedHead>0?troughCapacity/allocatedHead:0,refillHours:refill,flowMargin:sourceGpm-requiredGpm};
+    });
+    const allocationTotal=pointResults.reduce((s,p)=>s+p.allocation,0);
+
+    return {tempDelta,heatFactor,forageFactor,feedFactor,safetyFactor,totalHead,baseDaily,normalDaily,peakDaily,hourlyPeak,reserveH,reserveStorage,troughTotal,totalCapacity,gallonsPerHead,capacityMargin,refillHours,troughRefillHours,minSourceGpm,emptyStorageRecoveryGpm,sourceDailyCapacity,sourceMarginGpm,hourlySourceGallons,troughHoursCoverage,groupResults,pointResults,allocationTotal};
+  }
+
+  function capacityStatus(calc){
+    if(calc.totalHead<=0) return {text:'Add livestock groups',kind:''};
+    if(calc.reserveStorage<=0) return {text:'Reserve target not set',kind:'warn'};
+    const ratio=calc.totalCapacity/calc.reserveStorage;
+    if(ratio>=1) return {text:'Reserve capacity covered',kind:'good'};
+    if(ratio>=.75) return {text:'Additional reserve capacity needed',kind:'warn'};
+    return {text:'Reserve capacity deficit',kind:'bad'};
+  }
+
+  function calculateAndRender(markDirty=true){
+    if(!restoring) syncInputsToState();
+    calculations=compute();
+    renderResults(calculations);
+    updateGroupDerived(calculations);
+    updatePointDerived(calculations);
+    if(markDirty){persistSession();updateSaveState();}
+  }
+
+  function renderResults(c){
+    const status=capacityStatus(c);
+    $('reportMeta').textContent=`Project: ${state.project.name} · Generated: ${new Date().toLocaleString()}`;
+    $('peakDailyValue').textContent=fmtSmart(c.peakDaily)+' gal/day';
+    $('mobilePeak').textContent=fmtSmart(c.peakDaily)+' gal/day';
+    $('peakContext').textContent=c.totalHead?`${fmt(c.totalHead,0)} head · ${fmt(c.tempDelta,0)}°F above typical · ${fmt((c.safetyFactor-1)*100,0)}% safety factor`:'Add livestock groups to begin.';
+    const statusEl=$('capacityStatus'); statusEl.textContent=status.text; statusEl.className='status-pill '+status.kind;
+    $('normalDailyMetric').textContent=fmtSmart(c.normalDaily)+' gal';
+    $('hourlyPeakMetric').textContent=fmtSmart(c.hourlyPeak)+' gal/hr';
+    $('hourlyPeakContext').textContent=`Across ${fmt(state.assumptions.drinkingWindow,1)} hr/day peak window`;
+    $('reserveMetric').textContent=fmtSmart(c.reserveStorage)+' gal';
+    $('reserveContext').textContent=`${fmt(c.reserveH,1)} hours of peak demand`;
+    $('capacityMetric').textContent=fmtSmart(c.totalCapacity)+' gal';
+    $('capacityContext').textContent=`${fmt(c.troughTotal,0)} trough + ${fmt(state.waterSystem.storageTank,0)} storage`;
+    $('minGpmMetric').textContent=fmtSmart(c.minSourceGpm)+' GPM';
+    $('minGpmContext').textContent=`Peak-day volume recovered in ${fmt(state.waterSystem.recoveryHours,1)} hr`;
+    $('refillMetric').textContent=Number.isFinite(c.refillHours)?durationText(c.refillHours):'—';
+    $('perHeadMetric').textContent=fmtSmart(c.gallonsPerHead)+' gal';
+    $('marginMetric').textContent=(c.capacityMargin>=0?'+':'−')+fmtSmart(Math.abs(c.capacityMargin))+' gal';
+    $('marginContext').textContent=c.capacityMargin>=0?'Above reserve target':'Below reserve target';
+
+    const maxDemand=Math.max(c.normalDaily,c.peakDaily,1);
+    $('normalBar').style.width=Math.min(100,c.normalDaily/maxDemand*100)+'%';
+    $('peakBar').style.width=Math.min(100,c.peakDaily/maxDemand*100)+'%';
+    $('normalBarValue').textContent=fmtSmart(c.normalDaily)+' gal';
+    $('peakBarValue').textContent=fmtSmart(c.peakDaily)+' gal';
+
+    const req=Math.max(c.reserveStorage,1),ratio=c.totalCapacity/req;
+    const gauge=$('capacityGauge'); gauge.style.width=Math.min(100,ratio*100)+'%'; gauge.className='gauge-fill '+(ratio>=1?'':ratio>=.75?'warn':'bad');
+    $('gaugeNumbers').textContent=`${fmtSmart(c.totalCapacity)} / ${fmtSmart(c.reserveStorage)} gal`;
+    $('gaugeNote').textContent=c.reserveStorage<=0?'Set an emergency reserve to compare capacity.':c.capacityMargin>=0?`Capacity exceeds the reserve target by ${fmtSmart(c.capacityMargin)} gal.`:`Add about ${fmtSmart(Math.abs(c.capacityMargin))} gal of stored capacity to reach this reserve target.`;
+
+    const levelPct=c.reserveStorage>0?Math.min(100,c.totalCapacity/c.reserveStorage*100):0;
+    $('waterLevel').style.height=levelPct+'%';
+    $('tankHeadline').textContent=`${fmtSmart(c.totalCapacity)} gal on site`;
+    $('tankDetail').textContent=c.peakDaily>0?`Equivalent to ${fmt(c.totalCapacity/c.peakDaily,2)} peak-demand days before source replenishment.`:'Enter livestock demand to calculate drawdown.';
+    $('flowDetail').textContent=state.waterSystem.sourceGpm>0?`Source: ${fmtSmart(state.waterSystem.sourceGpm)} GPM · full refill ${durationText(c.refillHours)}`:'Source flow is 0 GPM; refill time cannot be calculated.';
+
+    renderAlerts(c);
+    renderFormulas(c);
+    $('herdSummary').textContent=`${fmt(c.totalHead,0)} head · ${fmtSmart(c.normalDaily)} normal gal/day`;
+  }
+
+  function renderAlerts(c){
+    const alerts=[];
+    if(c.totalHead<=0) alerts.push({kind:'info',text:'Add at least one livestock group with head count and gallons/head/day to calculate demand.'});
+    if(state.conditions.hotTemp<state.conditions.typicalTemp) alerts.push({kind:'warn',text:'Hot-weather planning temperature is below the typical temperature, so no temperature increase is applied.'});
+    if(c.reserveStorage>0 && c.capacityMargin<0) alerts.push({kind:c.totalCapacity/c.reserveStorage<.75?'bad':'warn',text:`Stored capacity is ${fmtSmart(Math.abs(c.capacityMargin))} gal below the selected emergency reserve target.`});
+    if(state.waterSystem.sourceGpm<=0 && c.peakDaily>0) alerts.push({kind:'bad',text:'No source flow is entered. Stored water will not automatically recover after drawdown.'});
+    else if(c.sourceMarginGpm<0) alerts.push({kind:'warn',text:`Available source flow is ${fmtSmart(Math.abs(c.sourceMarginGpm))} GPM below the modeled ${fmtSmart(c.minSourceGpm)} GPM recovery target.`});
+    else if(c.peakDaily>0) alerts.push({kind:'good',text:`Available source flow meets the modeled ${fmtSmart(c.minSourceGpm)} GPM recovery target by ${fmtSmart(c.sourceMarginGpm)} GPM.`});
+    if(c.troughTotal<c.hourlyPeak && c.hourlyPeak>0) alerts.push({kind:'warn',text:`Combined trough capacity (${fmtSmart(c.troughTotal)} gal) is below one modeled peak-hour draw (${fmtSmart(c.hourlyPeak)} gal). Review trough access, refill behavior, and field conditions.`});
+    if(c.hourlySourceGallons<c.hourlyPeak && c.hourlyPeak>0) alerts.push({kind:'info',text:`Peak-hour draw (${fmtSmart(c.hourlyPeak)} gal/hr) is higher than direct source inflow (${fmtSmart(c.hourlySourceGallons)} gal/hr); stored water must bridge the difference.`});
+    if(state.waterPointsEnabled && Math.abs(c.allocationTotal-100)>.1) alerts.push({kind:'warn',text:`Water-point herd allocation totals ${fmt(c.allocationTotal,1)}%. Set allocations to 100% for a complete point-by-point comparison.`});
+    $('alerts').innerHTML=alerts.map(a=>`<div class="alert ${a.kind}"><div class="alert-icon" aria-hidden="true">${a.kind==='good'?'✓':a.kind==='bad'?'!':a.kind==='warn'?'△':'i'}</div><p>${esc(a.text)}</p></div>`).join('');
+  }
+
+  function renderFormulas(c){
+    const a=state.assumptions,co=state.conditions,w=state.waterSystem;
+    const formulas=[
+      ['Normal daily demand',`Σ(head × gal/head/day) × forage factor × salt/feed factor × applicable lactation factor = ${fmt(c.normalDaily,1)} gal/day`],
+      ['Heat factor',`1 + max(0, ${fmt(co.hotTemp,1)}°F − ${fmt(co.typicalTemp,1)}°F) × ${fmt(a.heatRate,2)}%/°F = ${fmt(c.heatFactor,3)}×`],
+      ['Peak hot-weather demand',`Normal daily demand × heat factor × safety factor (${fmt(co.safetyFactor,1)}%) = ${fmt(c.peakDaily,1)} gal/day`],
+      ['Hourly peak planning demand',`${fmt(c.peakDaily,1)} ÷ ${fmt(a.drinkingWindow,1)} peak-drinking hours = ${fmt(c.hourlyPeak,1)} gal/hr`],
+      ['Required reserve storage',`${fmt(c.peakDaily,1)} gal/day × (${fmt(c.reserveH,1)} hours ÷ 24) = ${fmt(c.reserveStorage,1)} gal`],
+      ['On-site capacity',`${w.troughCount} troughs × ${fmt(w.troughCapacity,1)} gal + ${fmt(w.storageTank,1)} gal storage = ${fmt(c.totalCapacity,1)} gal`],
+      ['Minimum source flow',`${fmt(c.peakDaily,1)} gal ÷ (${fmt(w.recoveryHours,2)} hr × 60) = ${fmt(c.minSourceGpm,2)} GPM`],
+      ['Full refill time',w.sourceGpm>0?`${fmt(c.totalCapacity,1)} gal ÷ (${fmt(w.sourceGpm,2)} GPM × 60) = ${fmt(c.refillHours,2)} hours`:'Source flow is 0 GPM; refill time is undefined.'],
+      ['Capacity margin',`${fmt(c.totalCapacity,1)} gal − ${fmt(c.reserveStorage,1)} gal = ${fmt(c.capacityMargin,1)} gal`]
+    ];
+    $('formulaList').innerHTML=formulas.map(f=>`<div class="formula"><strong>${esc(f[0])}</strong><code>${esc(f[1])}</code></div>`).join('');
+  }
+
+  function updateGroupDerived(c){
+    c.groupResults.forEach((g,i)=>{const td=document.querySelector(`[data-group-normal="${i}"]`);if(td)td.textContent=fmtSmart(g.normalDemand);});
+  }
+  function updatePointDerived(c){
+    c.pointResults.forEach((p,i)=>{
+      const peak=document.querySelector(`[data-point-peak="${i}"]`),req=document.querySelector(`[data-point-required="${i}"]`);
+      if(peak)peak.textContent=fmtSmart(p.peakDemand); if(req)req.textContent=fmtSmart(p.requiredGpm)+' GPM';
+    });
+    if(state.waterPointsEnabled){
+      const ok=Math.abs(c.allocationTotal-100)<=.1;
+      els.allocationValidation.textContent=`Allocation total: ${fmt(c.allocationTotal,1)}%${ok?' · complete':' · should equal 100%'}`;
+      els.allocationValidation.className='validation '+(ok?'ok':'');
+    }
+  }
+
+  function editableStateOf(s){
+    return {projectName:s.project.name,livestockGroups:s.livestockGroups,conditions:s.conditions,waterSystem:s.waterSystem,waterPointsEnabled:s.waterPointsEnabled,waterPoints:s.waterPoints,reserveSettings:s.reserveSettings,assumptions:s.assumptions,notes:s.notes};
+  }
+  function currentEditableState(){ return editableStateOf(state); }
+  function updateSaveState(){
+    const current=hashObject(currentEditableState()),saved=current===lastSavedStateHash && lastSavedStateHash;
+    const untouched=!lastSavedStateHash && current===blankEditableHash;
+    $('saveStateText').textContent=saved?'Saved':untouched?'Unsaved':'Unsaved changes'; $('saveDot').className='dot '+(saved?'saved':'');
+  }
+  function persistSession(){
+    try{sessionStorage.setItem(SESSION_KEY,JSON.stringify({state,lastSavedStateHash}));}catch(e){}
+  }
+  function restoreSession(){
+    try{
+      const raw=sessionStorage.getItem(SESSION_KEY); if(!raw)return false;
+      const parsed=JSON.parse(raw); const validated=normalizeState(parsed.state);
+      if(!validated)return false; state=validated; lastSavedStateHash=typeof parsed.lastSavedStateHash==='string'?parsed.lastSavedStateHash:''; return true;
+    }catch(e){return false;}
+  }
+
+  function buildRAProject(){
+    syncInputsToState(); state.project.updatedAt=nowIso();
+    return {
+      raFile:true,formatVersion:TOOL.formatVersion,
+      tool:{id:TOOL.id,name:TOOL.name,version:TOOL.version},
+      project:{id:state.project.id,name:state.project.name,createdAt:state.project.createdAt,updatedAt:state.project.updatedAt},
+      preferences:{units:'US-customary'},
+      state:{livestockGroups:state.livestockGroups,conditions:state.conditions,waterSystem:state.waterSystem,waterPointsEnabled:state.waterPointsEnabled,waterPoints:state.waterPoints,reserveSettings:state.reserveSettings,assumptions:state.assumptions,notes:state.notes},
+      spatial:null,
+      metadata:{generator:'RanchAssist',schema:'ra-project'}
+    };
+  }
+  function saveProject(){
+    const project=buildRAProject();
+    downloadBlob(JSON.stringify(project,null,2),slug(project.project.name)+'.ra','application/x-ranchassist-project');
+    lastSavedStateHash=hashObject(currentEditableState()); persistSession(); updateSaveState(); toast('Project saved. Your RanchAssist .ra project file is ready.');
+  }
+  function validateRAProject(p){
+    if(!p || p.raFile!==true) throw new Error('Not a RanchAssist project. Choose a .ra file exported from RanchAssist.');
+    if(String(p.formatVersion||'')!=='1.0') throw new Error('This RanchAssist project format is not supported by this version.');
+    if(!p.tool || p.tool.id!==TOOL.id) throw new Error(`Different RanchAssist tool. This project belongs to ${safeText(p.tool&&p.tool.name||'another RanchAssist tool',100)}.`);
+    if(!p.project || !safeText(p.project.id,100) || !p.state) throw new Error('Project is incomplete. This file is missing information required to restore the project.');
+  }
+  function normalizeState(input,projectMeta){
+    try{
+      const src=input||{}; const base=createInitialState();
+      const proj=projectMeta||src.project||base.project;
+      const groups=Array.isArray(src.livestockGroups)?src.livestockGroups.slice(0,MAX_GROUPS).map((g,i)=>({name:safeText(g.name,80)||`Group ${i+1}`,livestockClass:CLASS_DEFAULTS[g.livestockClass]?g.livestockClass:'custom',head:Math.round(clamp(g.head,0,1000000,0)),gpdPerHead:clamp(g.gpdPerHead,0,10000,0)})):base.livestockGroups;
+      const points=Array.isArray(src.waterPoints)?src.waterPoints.slice(0,MAX_POINTS).map((p,i)=>({name:safeText(p.name,80)||`Water point ${i+1}`,allocation:clamp(p.allocation,0,100,0),troughCapacity:clamp(p.troughCapacity,0,10000000,0),sourceGpm:clamp(p.sourceGpm,0,100000,0)})):base.waterPoints;
+      const co=src.conditions||{}, ws=src.waterSystem||{}, ass=src.assumptions||{};
+      return {
+        project:{id:safeText(proj.id,100)||uuid(),name:safeText(proj.name,120)||'Water Requirement Project',createdAt:safeText(proj.createdAt,80)||nowIso(),updatedAt:safeText(proj.updatedAt,80)||nowIso()},
+        livestockGroups:groups.length?groups:[],
+        conditions:{typicalTemp:clamp(co.typicalTemp,-50,140,70),hotTemp:clamp(co.hotTemp,-50,150,95),forageCondition:co.forageCondition==='lush'?'lush':'dry',saltFeedAdj:clamp(co.saltFeedAdj,-50,200,0),lactationToggle:co.lactationToggle!==false,safetyFactor:clamp(co.safetyFactor,0,200,15),reserveValue:clamp(co.reserveValue,0,365,24),reserveMode:co.reserveMode==='days'?'days':'hours'},
+        waterSystem:{troughCount:Math.round(clamp(ws.troughCount,0,1000,2)),troughCapacity:clamp(ws.troughCapacity,0,10000000,500),storageTank:clamp(ws.storageTank,0,100000000,2500),sourceGpm:clamp(ws.sourceGpm,0,100000,5),recoveryHours:clamp(ws.recoveryHours,.25,168,8)},
+        waterPointsEnabled:!!src.waterPointsEnabled,waterPoints:points,reserveSettings:typeof src.reserveSettings==='object'&&src.reserveSettings?src.reserveSettings:{},
+        assumptions:{heatRate:clamp(ass.heatRate,0,10,1),dryForageAdj:clamp(ass.dryForageAdj,-50,200,10),lactationAdj:clamp(ass.lactationAdj,0,200,10),drinkingWindow:clamp(ass.drinkingWindow,1,24,8)},
+        notes:safeMultiline(src.notes,3000)
+      };
+    }catch(e){return null;}
+  }
+  async function openProjectFile(file){
+    try{
+      const text=await file.text(); if(text.length>5_000_000) throw new Error('Project file is too large to open safely.');
+      const p=JSON.parse(text); validateRAProject(p);
+      const normalized=normalizeState(p.state,p.project); if(!normalized) throw new Error('Project file could not be restored.');
+      state=normalized; lastSavedStateHash=hashObject(currentEditableState()); renderAll(); persistSession(); updateSaveState(); toast('Project opened. Your saved RanchAssist project has been restored.');
+    }catch(e){toast(e && e.message ? e.message : 'Project file could not be read. Try opening another saved copy.',true);}
+    finally{$('projectFileInput').value='';}
+  }
+  function duplicateProject(){
+    syncInputsToState(); const t=nowIso(); state.project={id:uuid(),name:(state.project.name||'Water Requirement Project')+' Copy',createdAt:t,updatedAt:t};
+    lastSavedStateHash=''; renderAll(); persistSession(); updateSaveState(); toast('Project duplicated. Save a new .ra file when ready.');
+  }
+
+  function downloadBlob(content,filename,type){
+    const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
+  function exportCsv(){
+    syncInputsToState(); calculations=compute();
+    const rows=[['Section','Name','Class / Detail','Head / Allocation','Gallons per head/day / Trough gal','Normal gal/day / Source GPM','Peak gal/day / Required GPM']];
+    calculations.groupResults.forEach(g=>rows.push(['Livestock',g.name,CLASS_DEFAULTS[g.livestockClass]?.label||'Custom',g.head,g.gpdPerHead,round(g.normalDemand,2),round(g.peakDemand,2)]));
+    if(state.waterPointsEnabled) calculations.pointResults.forEach(p=>rows.push(['Water point',p.name,'Herd allocation',p.allocation+'%',p.troughCapacity,p.sourceGpm,round(p.requiredGpm,3)]));
+    rows.push([],['Project','Project name',state.project.name],['Project','Generated',nowIso()],['Project','Notes',state.notes||''],['Summary','Normal daily demand','gal/day','',round(calculations.normalDaily,2)],['Summary','Peak hot-weather demand','gal/day','',round(calculations.peakDaily,2)],['Summary','Required reserve','gal','',round(calculations.reserveStorage,2)],['Summary','On-site capacity','gal','',round(calculations.totalCapacity,2)],['Summary','Minimum source flow','GPM','',round(calculations.minSourceGpm,3)],['Summary','Capacity margin','gal','',round(calculations.capacityMargin,2)]);
+    downloadBlob(rows.map(r=>r.map(escapeCsv).join(',')).join('\r\n'),slug(state.project.name)+'_Water_Requirement.csv','text/csv;charset=utf-8'); toast('CSV exported.');
+  }
+
+  function summaryText(){
+    syncInputsToState(); calculations=compute(); const c=calculations;
+    const lines=[`RanchAssist™ Water Requirement Calculator — ${state.project.name}`,`Herd: ${fmt(c.totalHead,0)} head`,`Normal demand: ${fmtSmart(c.normalDaily)} gal/day`,`Peak hot-weather demand: ${fmtSmart(c.peakDaily)} gal/day`,`Hourly peak plan: ${fmtSmart(c.hourlyPeak)} gal/hr`,`Required reserve: ${fmtSmart(c.reserveStorage)} gal (${fmt(c.reserveH,1)} hr)`,`On-site capacity: ${fmtSmart(c.totalCapacity)} gal`,`Capacity margin: ${c.capacityMargin>=0?'+':'-'}${fmtSmart(Math.abs(c.capacityMargin))} gal`,`Available source: ${fmtSmart(state.waterSystem.sourceGpm)} GPM`,`Minimum source flow: ${fmtSmart(c.minSourceGpm)} GPM to recover peak-day demand in ${fmt(state.waterSystem.recoveryHours,1)} hr`,`Full refill time: ${Number.isFinite(c.refillHours)?durationText(c.refillHours):'N/A'}`];
+    if(state.notes) lines.push(`Notes: ${state.notes}`);
+    lines.push('Planning aid only; not a certification of animal-welfare or engineering compliance.');
+    return lines.join('\n');
+  }
+
+  function copySummary(){
+    const text=summaryText();
+    if(navigator.clipboard && window.isSecureContext){navigator.clipboard.writeText(text).then(()=>toast('Summary copied.')).catch(()=>fallbackCopy(text));}
+    else fallbackCopy(text);
+  }
+  function fallbackCopy(text){
+    const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('Summary copied.');}catch(e){toast('Copy is not available in this browser.',true);}ta.remove();
+  }
+
+  function buildEmailPayload(email){
+    syncInputsToState(); calculations=compute(); const c=calculations;
+    const warnings=[];
+    if(c.capacityMargin<0) warnings.push(`Stored capacity is ${fmtSmart(Math.abs(c.capacityMargin))} gal below the selected emergency reserve target.`);
+    if(c.sourceMarginGpm<0) warnings.push(`Available source flow is ${fmtSmart(Math.abs(c.sourceMarginGpm))} GPM below the modeled recovery target.`);
+    if(state.waterPointsEnabled && Math.abs(c.allocationTotal-100)>.1) warnings.push(`Water-point allocation totals ${fmt(c.allocationTotal,1)}%, not 100%.`);
+    return {email,subject:`RanchAssist Water Requirement — ${state.project.name}`,summary:{projectName:state.project.name,timestamp:nowIso(),metrics:[
+      {label:'Total head',value:fmt(c.totalHead,0)},{label:'Normal daily demand',value:fmtSmart(c.normalDaily)+' gal/day'},{label:'Peak hot-weather demand',value:fmtSmart(c.peakDaily)+' gal/day'},{label:'Hourly peak planning demand',value:fmtSmart(c.hourlyPeak)+' gal/hr'},{label:'Required reserve storage',value:fmtSmart(c.reserveStorage)+' gal'},{label:'On-site capacity',value:fmtSmart(c.totalCapacity)+' gal'},{label:'Capacity margin',value:(c.capacityMargin>=0?'+':'−')+fmtSmart(Math.abs(c.capacityMargin))+' gal'},{label:'Available source flow',value:fmtSmart(state.waterSystem.sourceGpm)+' GPM'},{label:'Minimum source flow',value:fmtSmart(c.minSourceGpm)+' GPM'},{label:'Full refill time',value:Number.isFinite(c.refillHours)?durationText(c.refillHours):'N/A'}
+    ],warnings,notes:state.notes,assumptions:[`Typical temperature: ${fmt(state.conditions.typicalTemp,1)}°F`,`Hot-weather planning temperature: ${fmt(state.conditions.hotTemp,1)}°F`,`Heat adjustment rate: ${fmt(state.assumptions.heatRate,2)}% per °F above typical`,`Forage condition: ${state.conditions.forageCondition==='dry'?'Dry forage / hay':'Lush / high-moisture forage'}`,`Dry-forage adjustment: ${fmt(state.assumptions.dryForageAdj,1)}%`,`Salt/feed adjustment: ${fmt(state.conditions.saltFeedAdj,1)}%`,`Lactation adjustment: ${state.conditions.lactationToggle?fmt(state.assumptions.lactationAdj,1)+'% to lactating groups':'Off'}`,`Safety factor: ${fmt(state.conditions.safetyFactor,1)}%`,`Emergency reserve: ${fmt(c.reserveH,1)} hours`,`Peak drinking window: ${fmt(state.assumptions.drinkingWindow,1)} hr/day`,`Desired recovery period: ${fmt(state.waterSystem.recoveryHours,1)} hr`],groups:c.groupResults.map(g=>({name:g.name,livestockClass:CLASS_DEFAULTS[g.livestockClass]?.label||'Custom',head:fmt(g.head,0),gpdPerHead:fmt(g.gpdPerHead,1),normalDemand:fmt(g.normalDemand,1),peakDemand:fmt(g.peakDemand,1)})),waterPoints:state.waterPointsEnabled?c.pointResults.map(p=>({name:p.name,allocation:fmt(p.allocation,1)+'%',peakDemand:fmt(p.peakDemand,1),troughCapacity:fmt(p.troughCapacity,1),sourceGpm:fmt(p.sourceGpm,2),requiredGpm:fmt(p.requiredGpm,2)})):[]}};
+  }
+
+  function sendEmail(){
+    const email=safeText($('emailRecipient').value,254); $('emailValidation').textContent='';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){$('emailValidation').textContent='Enter a valid email address.';return;}
+    const btn=$('sendEmailBtn');btn.disabled=true;btn.textContent='Sending…'; const payload=buildEmailPayload(email);
+    if(window.google && google.script && google.script.run){
+      google.script.run.withSuccessHandler(()=>{btn.disabled=false;btn.textContent='Send Email';closeModal('emailModal');toast('Email sent.');}).withFailureHandler(err=>{btn.disabled=false;btn.textContent='Send Email';$('emailValidation').textContent=(err&&err.message)||'Email could not be sent.';}).sendWaterRequirementEmail(payload);
+    }else{
+      btn.disabled=false;btn.textContent='Send Email';closeModal('emailModal');
+      const body=encodeURIComponent(summaryText()); window.location.href=`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(payload.subject)}&body=${body}`; toast('Opened your email app.');
+    }
+  }
+
+  function updateWaterPointsVisibility(){
+    const on=!!els.waterPointsToggle.checked; els.waterPointsPanel.hidden=!on; els.waterPointsEmpty.hidden=on;
+  }
+  function toast(message,isError=false){
+    const t=$('toast');t.textContent=message;t.style.background=isError?'#6f3332':'#0A0A09';t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
+  }
+  function openModal(id){$(id).classList.add('open');const focus=$(id).querySelector('input,button');if(focus)setTimeout(()=>focus.focus(),20);}
+  function closeModal(id){$(id).classList.remove('open');}
+  function closeMenus(){document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'));$('exportMenuBtn').setAttribute('aria-expanded','false');$('shareMenuBtn').setAttribute('aria-expanded','false');}
+  function toggleMenu(btnId,menuId){const menu=$(menuId),will=!menu.classList.contains('open');closeMenus();if(will){menu.classList.add('open');$(btnId).setAttribute('aria-expanded','true');}}
+
+  function addLivestockGroup(){if(state.livestockGroups.length>=MAX_GROUPS){toast(`Maximum ${MAX_GROUPS} livestock groups.`,true);return;}state.livestockGroups.push({name:`Group ${state.livestockGroups.length+1}`,livestockClass:'custom',head:0,gpdPerHead:CLASS_DEFAULTS.custom.gpd});renderLivestockRows();calculateAndRender();}
+  function addWaterPoint(){if(state.waterPoints.length>=MAX_POINTS){toast(`Maximum ${MAX_POINTS} water points.`,true);return;}state.waterPoints.push({name:`Water point ${state.waterPoints.length+1}`,allocation:0,troughCapacity:0,sourceGpm:0});renderWaterPointRows();calculateAndRender();}
+
+  function bindEvents(){
+    document.addEventListener('input',e=>{
+      if(e.target.matches('[data-group-field]')){
+        const i=Number(e.target.dataset.index),f=e.target.dataset.groupField,g=state.livestockGroups[i]; if(!g)return;
+        if(f==='name')g.name=safeText(e.target.value,80); else if(f==='head')g.head=Math.round(clamp(e.target.value,0,1000000,0)); else if(f==='gpdPerHead')g.gpdPerHead=clamp(e.target.value,0,10000,0); calculateAndRender(); return;
+      }
+      if(e.target.matches('[data-point-field]')){
+        const i=Number(e.target.dataset.index),f=e.target.dataset.pointField,p=state.waterPoints[i]; if(!p)return;
+        if(f==='name')p.name=safeText(e.target.value,80); else if(f==='allocation')p.allocation=clamp(e.target.value,0,100,0); else if(f==='troughCapacity')p.troughCapacity=clamp(e.target.value,0,10000000,0); else if(f==='sourceGpm')p.sourceGpm=clamp(e.target.value,0,100000,0); calculateAndRender(); return;
+      }
+      if(['projectName','typicalTemp','hotTemp','saltFeedAdj','safetyFactor','reserveValue','heatRate','dryForageAdj','lactationAdj','drinkingWindow','troughCount','troughCapacity','storageTank','sourceGpm','recoveryHours','notes'].includes(e.target.id)) calculateAndRender();
+    });
+    document.addEventListener('change',e=>{
+      if(e.target.matches('[data-group-field="livestockClass"]')){
+        const i=Number(e.target.dataset.index),g=state.livestockGroups[i]; if(!g)return; const old=g.livestockClass;g.livestockClass=CLASS_DEFAULTS[e.target.value]?e.target.value:'custom';
+        if(g.gpdPerHead===CLASS_DEFAULTS[old]?.gpd || g.gpdPerHead===0){g.gpdPerHead=CLASS_DEFAULTS[g.livestockClass].gpd;renderLivestockRows();}calculateAndRender();return;
+      }
+      if(['forageCondition','lactationToggle','reserveMode','waterPointsToggle'].includes(e.target.id)){if(e.target.id==='waterPointsToggle')updateWaterPointsVisibility();calculateAndRender();}
+    });
+    document.addEventListener('click',e=>{
+      const rg=e.target.closest('[data-remove-group]'); if(rg){const i=Number(rg.dataset.removeGroup);state.livestockGroups.splice(i,1);renderLivestockRows();calculateAndRender();return;}
+      const rp=e.target.closest('[data-remove-point]'); if(rp){const i=Number(rp.dataset.removePoint);state.waterPoints.splice(i,1);renderWaterPointRows();calculateAndRender();return;}
+      const close=e.target.closest('[data-close-modal]'); if(close){closeModal(close.dataset.closeModal);return;}
+      if(!e.target.closest('.menu-wrap'))closeMenus();
+    });
+    $('addLivestockBtn').addEventListener('click',addLivestockGroup); $('addWaterPointBtn').addEventListener('click',addWaterPoint);
+    $('openProjectBtn').addEventListener('click',()=>$('projectFileInput').click()); $('projectFileInput').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)openProjectFile(f);});
+    $('saveProjectBtn').addEventListener('click',saveProject); $('duplicateProjectBtn').addEventListener('click',duplicateProject);
+    $('clearSessionBtn').addEventListener('click',()=>openModal('clearModal')); $('confirmClearBtn').addEventListener('click',()=>{sessionStorage.removeItem(SESSION_KEY);state=createInitialState();lastSavedStateHash='';blankEditableHash=hashObject(currentEditableState());renderAll();updateSaveState();closeModal('clearModal');toast('Session cleared.');});
+    $('exportMenuBtn').addEventListener('click',()=>toggleMenu('exportMenuBtn','exportMenu')); $('shareMenuBtn').addEventListener('click',()=>toggleMenu('shareMenuBtn','shareMenu'));
+    $('exportMenu').addEventListener('click',e=>{const a=e.target.dataset.action;if(!a)return;closeMenus();if(a==='csv')exportCsv();else if(a==='pdf'){toast('Use your print dialog to save as PDF.');setTimeout(()=>window.print(),120);}else if(a==='print')window.print();});
+    $('shareMenu').addEventListener('click',e=>{const a=e.target.dataset.action;if(!a)return;closeMenus();if(a==='copy')copySummary();else if(a==='email')openModal('emailModal');});
+    $('sendEmailBtn').addEventListener('click',sendEmail);
+    $('mobileViewResults').addEventListener('click',()=>{const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;$('resultsPanel').scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenus();document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'));}});
+    let printOpenState=[];
+    window.addEventListener('beforeprint',()=>{printOpenState=[...document.querySelectorAll('details')].map(d=>d.open);document.querySelectorAll('details').forEach(d=>d.open=true);});
+    window.addEventListener('afterprint',()=>{[...document.querySelectorAll('details')].forEach((d,i)=>d.open=!!printOpenState[i]);printOpenState=[];});
+    window.addEventListener('beforeunload',e=>{const current=hashObject(currentEditableState());if(lastSavedStateHash && current===lastSavedStateHash)return;if(!lastSavedStateHash && current===blankEditableHash)return;e.preventDefault();e.returnValue='';});
+  }
+
+  function init(){
+    blankEditableHash=hashObject(editableStateOf(createInitialState()));
+    bindEvents(); const restored=restoreSession(); renderAll(); updateSaveState(); if(restored)toast('Active session restored.');
+  }
+  init();
+})();
+</script>
+</body>
+</html>
